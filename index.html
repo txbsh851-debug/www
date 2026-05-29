@@ -879,11 +879,10 @@
                     explosions.push({ gx: tx, gy: ty, life: 30 });
 
                     // 誘爆処理
-                    const otherBombIdx = bombs.findIndex(ob => ob.gx === tx && ob.gy === ty);
-                    if (otherBombIdx !== -1) {
-                        const targetBomb = bombs.splice(otherBombIdx, 1)[0];
-                        player.bombsPlaced--;
-                        explode(targetBomb);
+                    const targetBomb = bombs.find(ob => ob.gx === tx && ob.gy === ty);
+                    if (targetBomb && targetBomb.timer > 30) {
+                        // 即座に爆発させず、短い猶予（10フレーム）を与えて連鎖させる
+                        targetBomb.timer = 10;
                     }
 
                     if (grid[ty][tx] === BLOCK) {
@@ -1116,7 +1115,8 @@
 
         window.onload = function() {
             if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-                document.getElementById('mobileWarning').classList.remove('hidden');
+                window.location.href = 'NoSmartPhone.html';
+                return;
             }
             initGame();
             requestAnimationFrame(update);
