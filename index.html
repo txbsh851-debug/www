@@ -180,6 +180,11 @@
     </div>
 
     <script>
+        // スマートフォン（Google Chrome等）からのアクセスを判定してリダイレクト
+        if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+            window.location.href = 'NoSmartPhone.html';
+        }
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const pauseBtn = document.getElementById('pauseBtn');
@@ -1114,10 +1119,6 @@
         }
 
         window.onload = function() {
-            if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-                window.location.href = 'NoSmartPhone.html';
-                return;
-            }
             initGame();
             requestAnimationFrame(update);
         }
