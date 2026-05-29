@@ -2,9 +2,1125 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Hello World</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BOMBERMAN: Tactical Action</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #F1F5F9; 
+            background-image: radial-gradient(circle at 2px 2px, #E2E8F0 1px, transparent 0);
+            background-size: 24px 24px;
+            touch-action: none;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .font-meiryo {
+            font-family: 'Meiryo', 'MS PGothic', 'Hiragino Kaku Gothic ProN', sans-serif;
+        }
+
+        canvas {
+            background: #F8FAFC;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.1);
+            border: 8px solid #FFFFFF;
+            image-rendering: pixelated;
+        }
+
+        .btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+        }
+        .btn:active {
+            transform: translateY(1px);
+            filter: brightness(0.95);
+        }
+
+        .stat-badge {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+        .stat-label {
+            font-size: 10px;
+            font-weight: 900;
+            color: #94a3b8;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: 900;
+            color: #1e293b;
+            line-height: 1;
+            margin-top: 2px;
+        }
+        .value-orange { color: #f97316; }
+    </style>
 </head>
 <body>
-    <h1>Hello World!</h1>
+
+    <div class="flex flex-col items-center gap-4">
+        <!-- コントロールパネル -->
+        <div class="w-[850px] flex items-center justify-between pl-4 pr-6 py-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-white">
+            <div class="flex items-center gap-8">
+                <!-- タイトルロゴ -->
+                <div class="font-meiryo text-4xl font-black text-orange-500 tracking-tighter select-none ml-2">
+                    BOMBERMAN
+                </div>
+
+                <!-- ステータスHUD -->
+                <div class="flex gap-4">
+                    <div class="stat-badge">
+                        <span class="stat-label">LIFE</span>
+                        <span id="lifeVal" class="stat-value value-orange">5</span>
+                    </div>
+                    <div class="stat-badge">
+                        <span class="stat-label">SCORE</span>
+                        <span id="scoreVal" class="stat-value">0000</span>
+                    </div>
+                    <div class="stat-badge">
+                        <span class="stat-label">ENEMIES</span>
+                        <span id="enemyVal" class="stat-value text-red-500">4</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作ボタン -->
+            <div class="flex gap-3">
+                <button id="pauseBtn" class="btn px-5 py-2.5 bg-slate-800 text-white rounded-xl font-black text-xs tracking-tighter uppercase flex items-center gap-2 shadow-sm">
+                    <span id="pauseIcon">⏸</span> <span id="pauseText">PAUSE</span>
+                </button>
+                <button id="resetBtn" class="btn px-5 py-2.5 bg-orange-500 text-white rounded-xl font-black text-xs tracking-tighter uppercase flex items-center gap-2 shadow-sm">
+                    <span>↻</span> RESET GAME
+                </button>
+            </div>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div class="relative flex flex-col items-center">
+            <canvas id="gameCanvas" width="850" height="700"></canvas>
+            
+            <!-- スタート画面（背後が透けないように完全に不透明な背景色を設定） -->
+            <div id="startOverlay" class="hidden fixed inset-0 z-[100] flex items-end justify-center pb-16" style="background-image: url('./image/Start.png'); background-size: cover; background-position: center; background-repeat: no-repeat; background-color: rgb(15, 23, 42);">
+                <div class="flex gap-4">
+                    <a id="guideBtn" href="./guide.html" class="btn px-10 py-3 bg-white/90 text-slate-900 rounded-xl font-black text-lg tracking-wide shadow-lg border-2 border-slate-900/10">
+                        ゲーム説明
+                    </a>
+                    <button id="startBtn" class="btn px-10 py-3 bg-orange-500 text-white rounded-xl font-black text-lg tracking-wide shadow-lg border-2 border-white/80">
+                        ゲームスタート
+                    </button>
+                </div>
+            </div>
+            
+            <!-- ポーズオーバーレイ -->
+            <div id="pauseOverlay" class="hidden absolute inset-0 bg-slate-900/40 backdrop-blur-sm rounded-2xl flex items-center justify-center z-40">
+                <div class="bg-white p-8 rounded-3xl shadow-2xl text-center">
+                    <div class="text-4xl font-black text-slate-800 mb-3">PAUSED</div>
+                    <div id="pauseMessage" class="text-sm text-slate-600 mb-5"></div>
+                    <button id="resumeOverlayBtn" class="px-8 py-3 bg-orange-500 text-white rounded-xl font-black hover:scale-105 transition-transform">RESUME GAME</button>
+                </div>
+            </div>
+
+            <!-- ゲームクリア演出オーバーレイ -->
+            <div id="clearOverlay" class="hidden fixed inset-0 z-[100] flex items-end justify-center pb-16" style="background-image: url('./image/Clear.png'); background-size: cover; background-position: center; background-repeat: no-repeat; background-color: rgba(15, 23, 42, 0.9);">
+                <button id="clearQuitBtn" class="btn px-10 py-3 bg-slate-900 text-white rounded-xl font-black text-lg tracking-wide shadow-lg border-2 border-white/80">QUIT</button>
+            </div>
+
+            <!-- ゲームオーバーオーバーレイ -->
+            <div id="gameOverOverlay" class="hidden fixed inset-0 cursor-pointer z-[100] flex items-end justify-center pb-16" style="background-image: url('./image/Gameover.png'); background-size: cover; background-position: center; background-repeat: no-repeat; background-color: rgba(15, 23, 42, 0.9);">
+                <div class="flex gap-5">
+                    <button id="retryBtn" class="btn px-10 py-3 bg-orange-500 text-white rounded-xl font-black text-lg tracking-wide shadow-lg border-2 border-white/80">RETRY</button>
+                    <button id="quitBtn" class="btn px-10 py-3 bg-slate-900 text-white rounded-xl font-black text-lg tracking-wide shadow-lg border-2 border-white/80">QUIT</button>
+                </div>
+            </div>
+
+            <!-- 画面下部に配置するゴール条件説明 -->
+            <div id="goalInfo" class="mt-4 bg-white/85 backdrop-blur-md px-6 py-2.5 rounded-full border border-slate-200/50 shadow-sm flex items-center gap-2.5 select-none">
+                <span class="flex h-2 w-2 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                </span>
+                <span class="font-meiryo text-sm font-bold text-slate-700 tracking-tight">
+                    ゴール条件: すべての敵を倒し、扉にたどり着くこと
+                </span>
+                <span class="flex h-2 w-2 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                </span>
+                <span class="font-meiryo text-sm font-bold text-slate-700 tracking-tight">
+                    B: 爆弾追加
+                </span>
+                <span class="flex h-2 w-2 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                </span>
+                <span class="font-meiryo text-sm font-bold text-slate-700 tracking-tight">
+                    F: 火力アップ 
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const pauseText = document.getElementById('pauseText');
+        const pauseIcon = document.getElementById('pauseIcon');
+        const startOverlay = document.getElementById('startOverlay');
+        const startBtn = document.getElementById('startBtn');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+        const clearOverlay = document.getElementById('clearOverlay');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const guideBtn = document.getElementById('guideBtn');
+        const resumeOverlayBtn = document.getElementById('resumeOverlayBtn');
+        const clearQuitBtn = document.getElementById('clearQuitBtn');
+        const retryBtn = document.getElementById('retryBtn');
+        const quitBtn = document.getElementById('quitBtn');
+        const goalInfo = document.getElementById('goalInfo');
+        
+        const lifeDisplay = document.getElementById('lifeVal');
+        const scoreDisplay = document.getElementById('scoreVal');
+        const enemyDisplay = document.getElementById('enemyVal');
+        
+        // グリッドサイズを 9x9 に設定
+        const TILE_SIZE = 70; 
+        const ROWS = 9;
+        const COLS = 9;
+        const OFFSET_X = (canvas.width - COLS * TILE_SIZE) / 2;
+        const OFFSET_Y = (canvas.height - ROWS * TILE_SIZE) / 2;
+
+        const COLORS = {
+            brick: '#5D4037',
+            brickLight: '#8D6E63',
+            floor: '#FFFFFF',
+            floorLine: '#f1f5f9',
+            block: '#A67C52',
+            playerOrange: '#F97316',
+            playerWhite: '#FFFFFF',
+            enemyColors: [
+                { main: '#8B5CF6', accent: '#A78BFA' },
+                { main: '#EF4444', accent: '#F87171' },
+                { main: '#10B981', accent: '#34D399' }
+            ]
+        };
+
+        const EMPTY = 0, WALL = 1, BLOCK = 2;
+        const ITEM_BOMB = 3, ITEM_FIRE = 4, EXIT_DOOR = 5;
+
+        let grid = [];
+        let itemGrid = []; // アイテムやゴールの扉を保持する裏グリッド
+        let player = {
+            x: 0, y: 0, radius: Math.floor(TILE_SIZE * 0.2), speed: 3.5,
+            bombsMax: 1, bombsPlaced: 0, firePower: 1,
+            dir: 'down', animFrame: 0, isMoving: false, nextDir: null,
+            lives: 5, score: 0, invincibility: 0
+        };
+
+        const playerImg = new Image();
+        playerImg.src = './image/bomberman.svg';
+        const playerLeftImg = new Image();
+        playerLeftImg.src = './image/left.png';
+        const playerRightImg = new Image();
+        playerRightImg.src = './image/RIGHT.png';
+        const playerFrontImg = new Image();
+        playerFrontImg.src = './image/FRONT.png';
+        const playerBackImg = new Image();
+        playerBackImg.src = './image/BACK.png';
+        const exitImg = new Image();
+        exitImg.src = './image/Exit.png';
+
+        // processed (background-removed) image objects
+        let playerImgProc = null;
+        let playerLeftImgProc = null;
+        let playerRightImgProc = null;
+        let playerFrontImgProc = null;
+        let playerBackImgProc = null;
+        let exitImgProc = null;
+        let exitImgReady = false;
+
+        // ready flags indicate processed images are available
+        let playerImgReady = false;
+        let playerLeftImgReady = false;
+        let playerRightImgReady = false;
+        let playerFrontImgReady = false;
+        let playerBackImgReady = false;
+
+        // Utility: remove uniform background color (canvas background #F8FAFC) and create a new image with transparent background.
+        function removeBackground(img, tolerance = 40, callback) {
+            const c = document.createElement('canvas');
+            c.width = img.naturalWidth || img.width;
+            c.height = img.naturalHeight || img.height;
+            const cx = c.getContext('2d');
+            cx.drawImage(img, 0, 0, c.width, c.height);
+            let imgData;
+            try {
+                imgData = cx.getImageData(0, 0, c.width, c.height);
+            } catch (e) {
+                // Cross-origin or other error — fallback to original image
+                callback(img);
+                return;
+            }
+            // Use canvas background color #F8FAFC (RGB: 248, 250, 252)
+            const r0 = 248, g0 = 250, b0 = 252;
+            const tolSq = tolerance * tolerance;
+            for (let i = 0; i < imgData.data.length; i += 4) {
+                const dr = imgData.data[i] - r0;
+                const dg = imgData.data[i + 1] - g0;
+                const db = imgData.data[i + 2] - b0;
+                if (dr * dr + dg * dg + db * db <= tolSq) {
+                    imgData.data[i + 3] = 0; // transparent
+                }
+            }
+            cx.putImageData(imgData, 0, 0);
+            const proc = new Image();
+            proc.onload = () => callback(proc);
+            proc.src = c.toDataURL('image/png');
+        }
+
+        // process each image after load to remove background
+        playerImg.onload = () => removeBackground(playerImg, 48, (p) => { playerImgProc = p; playerImgReady = true; });
+        playerLeftImg.onload = () => removeBackground(playerLeftImg, 48, (p) => { playerLeftImgProc = p; playerLeftImgReady = true; });
+        playerRightImg.onload = () => removeBackground(playerRightImg, 48, (p) => { playerRightImgProc = p; playerRightImgReady = true; });
+        playerFrontImg.onload = () => removeBackground(playerFrontImg, 48, (p) => { playerFrontImgProc = p; playerFrontImgReady = true; });
+        playerBackImg.onload = () => removeBackground(playerBackImg, 48, (p) => { playerBackImgProc = p; playerBackImgReady = true; });
+        exitImg.onload = () => removeBackground(exitImg, 20, (p) => { exitImgProc = p; exitImgReady = true; });
+
+        let bombs = [];
+        let explosions = [];
+        let enemies = [];
+        let gameActive = false;
+        let waitingForStart = false;
+        let isPaused = false;
+        let keys = {};
+        
+        function updatePauseUI() {
+            pauseText.innerText = isPaused ? 'RESUME' : 'PAUSE';
+            pauseIcon.innerText = isPaused ? '▶' : '⏸';
+            pauseBtn.classList.toggle('bg-green-500', isPaused);
+            pauseBtn.classList.toggle('bg-slate-800', !isPaused);
+            pauseOverlay.classList.toggle('hidden', !isPaused);
+        }
+
+        function togglePause() {
+            if (!gameActive) return;
+            isPaused = !isPaused;
+            updatePauseUI();
+        }
+
+        function pauseStage(reason) {
+            if (!gameActive) return;
+            isPaused = true;
+            updatePauseUI();
+            const pauseMessage = document.getElementById('pauseMessage');
+            if (pauseMessage) {
+                pauseMessage.innerText = reason || '';
+            }
+        }
+
+        function clearPauseMessage() {
+            const pauseMessage = document.getElementById('pauseMessage');
+            if (pauseMessage) pauseMessage.innerText = '';
+        }
+
+        pauseBtn.addEventListener('click', () => {
+            if (!gameActive) return;
+            if (isPaused) {
+                clearPauseMessage();
+            }
+            togglePause();
+        });
+        resumeOverlayBtn.addEventListener('click', () => {
+            clearPauseMessage();
+            togglePause();
+        });
+        resetBtn.addEventListener('click', () => {
+            initGame();
+        });
+        
+        clearOverlay.addEventListener('click', (e) => {
+            // QUITボタン自体が押された場合は、QUIT側の処理を実行
+            return;
+            clearOverlay.classList.add('hidden');
+            goalInfo.classList.remove('hidden');
+            initGame();
+        });
+
+        // クリア画面のQUITボタン
+        clearQuitBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            quitGame();
+        });
+
+        retryBtn.addEventListener('click', () => {
+            gameOverOverlay.classList.add('hidden');
+            goalInfo.classList.remove('hidden');
+            initGame();
+            startGame();
+        });
+
+        // ゲームオーバー画面のQUITボタン
+        quitBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            quitGame();
+        });
+
+        // スタートボタンをクリックした時のみゲームを開始
+        startBtn.addEventListener('click', () => {
+            startGame();
+        });
+
+        window.addEventListener('keydown', e => {
+            // スタート画面待機中は、任意のキー入力による開始を無効化
+            if (waitingForStart) return;
+
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                e.preventDefault();
+                const keyName = e.key === ' ' ? 'Space' : e.key;
+                keys[keyName] = true;
+                if (keyName !== 'Space') player.nextDir = getDirFromKey(e.key);
+                if (keyName === 'Space' && gameActive && !isPaused) placeBomb();
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            const keyName = e.key === ' ' ? 'Space' : e.key;
+            keys[keyName] = false;
+            const dir = getDirFromKey(e.key);
+            if (dir && player.nextDir === dir) player.nextDir = null;
+        });
+
+        function updateHUD() {
+            lifeDisplay.innerText = player.lives;
+            scoreDisplay.innerText = player.score.toString().padStart(4, '0');
+            const aliveEnemies = enemies.filter(en => en.alive).length;
+            enemyDisplay.innerText = aliveEnemies;
+        }
+
+        function getDirectionKey(dir) {
+            switch (dir) {
+                case 'up': return 'ArrowUp';
+                case 'down': return 'ArrowDown';
+                case 'left': return 'ArrowLeft';
+                case 'right': return 'ArrowRight';
+                default: return null;
+            }
+        }
+
+        function chooseStartDirection() {
+            const directions = ['down', 'right', 'left', 'up'];
+            for (const dir of directions) {
+                const key = getDirectionKey(dir);
+                const dx = dir === 'left' ? -player.speed : dir === 'right' ? player.speed : 0;
+                const dy = dir === 'up' ? -player.speed : dir === 'down' ? player.speed : 0;
+                if (!checkCollision(player.x + dx, player.y + dy, true)) {
+                    return key;
+                }
+            }
+            return null;
+        }
+
+        function pressStartDirection() {
+            const pressed = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].some(k => keys[k]);
+            if (pressed) return;
+            const startKey = chooseStartDirection();
+            if (startKey) {
+                keys[startKey] = true;
+                player.nextDir = getDirFromKey(startKey);
+            }
+        }
+
+        function showStartScreen() {
+            waitingForStart = true;
+            gameActive = false;
+            isPaused = false;
+            clearPauseMessage();
+            startOverlay.classList.remove('hidden');
+            updatePauseUI();
+            keys = {};
+        }
+
+        function startGame() {
+            waitingForStart = false;
+            player.nextDir = null;
+            gameActive = true;
+            startOverlay.classList.add('hidden');
+        }
+
+        function showGameOver() {
+            gameActive = false;
+            waitingForStart = false;
+            isPaused = false;
+            keys = {};
+            bombs = [];
+            explosions = [];
+            startOverlay.classList.add('hidden');
+            pauseOverlay.classList.add('hidden');
+            gameOverOverlay.classList.remove('hidden');
+            goalInfo.classList.add('hidden');
+            updatePauseUI();
+        }
+
+        // QUIT時にスタート画面（StartOverlay）に戻る
+        function quitGame() {
+            gameActive = false;
+            waitingForStart = false;
+            isPaused = false;
+            keys = {};
+            bombs = [];
+            explosions = [];
+            enemies = [];
+            
+            // すべてのオーバーレイを非表示にする
+            startOverlay.classList.add('hidden');
+            pauseOverlay.classList.add('hidden');
+            clearOverlay.classList.add('hidden');
+            gameOverOverlay.classList.add('hidden');
+            goalInfo.classList.remove('hidden');
+            
+            // Canvasをリフレッシュし、ゲーム初期状態で再起動
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            initGame(); // スタート画面を表示し待機する
+        }
+
+        function initGame() {
+            player.lives = 5; 
+            player.score = 0;
+            player.bombsMax = 1;
+            player.firePower = 1;
+            player.invincibility = 0;
+            player.nextDir = null;
+            initGrid();
+            pauseOverlay.classList.add('hidden');
+            clearOverlay.classList.add('hidden');
+            gameOverOverlay.classList.add('hidden');
+            goalInfo.classList.remove('hidden');
+            clearPauseMessage();
+            updateHUD();
+            showStartScreen();
+        }
+
+        function initGrid() {
+            grid = [];
+            itemGrid = [];
+            
+            let destructibleBlocks = [];
+
+            // 地形生成
+            for (let r = 0; r < ROWS; r++) {
+                grid[r] = [];
+                itemGrid[r] = [];
+                for (let c = 0; c < COLS; c++) {
+                    itemGrid[r][c] = EMPTY;
+                    
+                    if (r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1 || (r % 2 === 0 && c % 2 === 0)) {
+                        grid[r][c] = WALL;
+                    } else if (Math.random() < 0.65 && !(r <= 2 && c <= 2)) {
+                        grid[r][c] = BLOCK;
+                        destructibleBlocks.push({ r, c });
+                    } else {
+                        grid[r][c] = EMPTY;
+                    }
+                }
+            }
+
+            // ゴールの扉隠蔽
+            if (destructibleBlocks.length > 0) {
+                const doorIndex = Math.floor(Math.random() * destructibleBlocks.length);
+                const doorPos = destructibleBlocks[doorIndex];
+                itemGrid[doorPos.r][doorPos.c] = EXIT_DOOR;
+                
+                destructibleBlocks.splice(doorIndex, 1);
+                destructibleBlocks.forEach(block => {
+                    if (Math.random() < 0.3) {
+                        itemGrid[block.r][block.c] = Math.random() < 0.5 ? ITEM_BOMB : ITEM_FIRE;
+                    }
+                });
+            }
+
+            player.x = OFFSET_X + TILE_SIZE + TILE_SIZE / 2;
+            player.y = OFFSET_Y + TILE_SIZE + TILE_SIZE / 2;
+            player.bombsPlaced = 0;
+            bombs = [];
+            explosions = [];
+            spawnEnemies();
+        }
+
+        function spawnEnemies() {
+            enemies = [];
+            const count = 4;
+            
+            for (let i = 0; i < count; i++) {
+                let r, c;
+                do {
+                    r = Math.floor(Math.random() * (ROWS-2)) + 1;
+                    c = Math.floor(Math.random() * (COLS-2)) + 1;
+                } while (grid[r][c] !== EMPTY || (r < 4 && c < 4));
+                
+                const type = COLORS.enemyColors[i % COLORS.enemyColors.length];
+                
+                // 初期の中心点座標
+                const startX = OFFSET_X + c * TILE_SIZE + TILE_SIZE / 2;
+                const startY = OFFSET_Y + r * TILE_SIZE + TILE_SIZE / 2;
+
+                enemies.push({
+                    x: startX,
+                    y: startY,
+                    gx: c, // 現在のグリッドX座標
+                    gy: r, // 現在のグリッドY座標
+                    tx: c, // 目標のグリッドX座標
+                    ty: r, // 目標のグリッドY座標
+                    speed: 1.8, // 滑らかな移動を可能にする等速スピード
+                    radius: TILE_SIZE / 2, // 直径がちょうど道幅と同じ
+                    alive: true,
+                    color: type.main,
+                    accent: type.accent,
+                    lastDir: null // 直前の進行方向（Uターン防止用）
+                });
+            }
+        }
+
+        function checkCollision(nx, ny, isPlayer = false) {
+            const r = isPlayer ? player.radius : TILE_SIZE / 2;
+            const points = [{x: nx - r, y: ny - r}, {x: nx + r, y: ny - r}, {x: nx - r, y: ny + r}, {x: nx + r, y: ny + r}];
+
+            for (let p of points) {
+                const gx = Math.floor((p.x - OFFSET_X) / TILE_SIZE);
+                const gy = Math.floor((p.y - OFFSET_Y) / TILE_SIZE);
+                if (gy < 0 || gy >= ROWS || gx < 0 || gx >= COLS) return true;
+                if (grid[gy][gx] === WALL || grid[gy][gx] === BLOCK) return true;
+                
+                if (!isPlayer) {
+                    for (let b of bombs) {
+                        if (gx === b.gx && gy === b.gy) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function getDirFromKey(key) {
+            switch (key) {
+                case 'ArrowUp': return 'up';
+                case 'ArrowDown': return 'down';
+                case 'ArrowLeft': return 'left';
+                case 'ArrowRight': return 'right';
+                default: return null;
+            }
+        }
+
+        // キャラクター位置調整ユーティリティ
+        function getTileCenterX(x) {
+            const col = Math.round((x - OFFSET_X) / TILE_SIZE);
+            return OFFSET_X + col * TILE_SIZE + TILE_SIZE / 2;
+        }
+
+        function getTileCenterY(y) {
+            const row = Math.round((y - OFFSET_Y) / TILE_SIZE);
+            return OFFSET_Y + row * TILE_SIZE + TILE_SIZE / 2;
+        }
+
+        function canTurnAtCenter(dir) {
+            const centerX = getTileCenterX(player.x);
+            const centerY = getTileCenterY(player.y);
+            const nx = centerX + (dir === 'left' ? -player.speed : dir === 'right' ? player.speed : 0);
+            const ny = centerY + (dir === 'up' ? -player.speed : dir === 'down' ? player.speed : 0);
+            return !checkCollision(nx, ny, true);
+        }
+
+        function isNearTileCenter(axis) {
+            if (axis === 'x') {
+                return Math.abs(player.x - getTileCenterX(player.x)) <= player.speed * 6.0;
+            }
+            return Math.abs(player.y - getTileCenterY(player.y)) <= player.speed * 6.0;
+        }
+
+        function placeBomb() {
+            const gx = Math.floor((player.x - OFFSET_X) / TILE_SIZE);
+            const gy = Math.floor((player.y - OFFSET_Y) / TILE_SIZE);
+            if (player.bombsPlaced < player.bombsMax && !bombs.some(b => b.gx === gx && b.gy === gy)) {
+                bombs.push({ gx, gy, timer: 150, power: player.firePower });
+                player.bombsPlaced++;
+            }
+        }
+
+        function update(timestamp) {
+            // スタート画面待機中はCanvas描画をスキップして2重化を防止
+            if (waitingForStart) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                requestAnimationFrame(update);
+                return;
+            }
+
+            if (!gameActive || isPaused) {
+                draw();
+                requestAnimationFrame(update);
+                return;
+            }
+
+            if (player.invincibility > 0) player.invincibility--;
+
+            // プレイヤーの移動
+            let mx = 0, my = 0;
+            if (keys['ArrowUp']) { my = -player.speed; player.dir = 'up'; }
+            else if (keys['ArrowDown']) { my = player.speed; player.dir = 'down'; }
+            if (keys['ArrowLeft']) { mx = -player.speed; player.dir = 'left'; }
+            else if (keys['ArrowRight']) { mx = player.speed; player.dir = 'right'; }
+
+            // 角での滑らかなターンを補正
+            if (player.nextDir) {
+                const centerX = getTileCenterX(player.x);
+                const centerY = getTileCenterY(player.y);
+                const closeToCenterX = isNearTileCenter('x');
+                const closeToCenterY = isNearTileCenter('y');
+
+                if (my !== 0 && (player.nextDir === 'left' || player.nextDir === 'right')) {
+                    if (closeToCenterX) {
+                        player.x = centerX;
+                        if (canTurnAtCenter(player.nextDir)) {
+                            mx = player.nextDir === 'left' ? -player.speed : player.speed;
+                            my = 0;
+                            player.dir = player.nextDir;
+                        }
+                    }
+                } else if (mx !== 0 && (player.nextDir === 'up' || player.nextDir === 'down')) {
+                    if (closeToCenterY) {
+                        player.y = centerY;
+                        if (canTurnAtCenter(player.nextDir)) {
+                            my = player.nextDir === 'up' ? -player.speed : player.speed;
+                            mx = 0;
+                            player.dir = player.nextDir;
+                        }
+                    }
+                }
+            }
+
+            if (mx !== 0 || my !== 0) {
+                player.isMoving = true;
+                player.animFrame += 0.2;
+                const newX = player.x + mx;
+                const newY = player.y + my;
+
+                if (mx !== 0 && my !== 0) {
+                    if (!checkCollision(newX, player.y, true)) player.x = newX;
+                    if (!checkCollision(player.x, newY, true)) player.y = newY;
+                } else if (!checkCollision(newX, newY, true)) {
+                    player.x = newX;
+                    player.y = newY;
+                }
+            } else { player.isMoving = false; }
+
+            const pgx = Math.floor((player.x - OFFSET_X) / TILE_SIZE);
+            const pgy = Math.floor((player.y - OFFSET_Y) / TILE_SIZE);
+
+            // アイテム・扉回収判定
+            if (grid[pgy] && grid[pgy][pgx] === EMPTY) {
+                const currentItem = itemGrid[pgy][pgx];
+                const aliveEnemies = enemies.filter(en => en.alive).length;
+
+                if (currentItem === ITEM_BOMB) { 
+                    player.bombsMax++; 
+                    itemGrid[pgy][pgx] = EMPTY; 
+                    updateHUD();
+                } else if (currentItem === ITEM_FIRE) { 
+                    player.firePower++; 
+                    itemGrid[pgy][pgx] = EMPTY; 
+                } else if (currentItem === EXIT_DOOR) {
+                    if (aliveEnemies === 0) {
+                        gameActive = false;
+                        player.score += 500;
+                        updateHUD();
+                        clearOverlay.classList.remove('hidden');
+                        goalInfo.classList.add('hidden');
+                    } else {
+                        // 敵が残っている場合のヒント（任意で追加可能）
+                    }
+                }
+            }
+
+            // 爆弾タイマー
+            bombs.forEach(b => b.timer--);
+
+            let expiredBomb;
+            while ((expiredBomb = bombs.find(b => b.timer <= 0))) {
+                const idx = bombs.indexOf(expiredBomb);
+                bombs.splice(idx, 1);
+                player.bombsPlaced--;
+                explode(expiredBomb);
+            }
+
+            // エネミーの超スムーズなグリッド制御移動
+            enemies.forEach(en => {
+                if (!en.alive) return;
+
+                // 現在向かっている目標タイルの中心座標を算出
+                const targetX = OFFSET_X + en.tx * TILE_SIZE + TILE_SIZE / 2;
+                const targetY = OFFSET_Y + en.ty * TILE_SIZE + TILE_SIZE / 2;
+
+                // 目標座標までの距離
+                const dist = Math.hypot(targetX - en.x, targetY - en.y);
+
+                if (dist <= en.speed) {
+                    // 目標にピッタリ到達した時点で座標をロックし、現在地情報を更新
+                    en.x = targetX;
+                    en.y = targetY;
+                    en.gx = en.tx;
+                    en.gy = en.ty;
+
+                    // 次に進むことができる（壁・ブロック・爆弾のない）隣接グリッドを探す
+                    const possibleDirs = [];
+                    const directions = [
+                        { x: 0, y: -1, name: 'up' },
+                        { x: 0, y: 1, name: 'down' },
+                        { x: -1, y: 0, name: 'left' },
+                        { x: 1, y: 0, name: 'right' }
+                    ];
+
+                    directions.forEach(d => {
+                        const nx = en.gx + d.x;
+                        const ny = en.gy + d.y;
+                        if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+                            if (grid[ny][nx] === EMPTY) {
+                                // 爆弾がそのマスに置かれていないかチェック
+                                const hasBomb = bombs.some(b => b.gx === nx && b.gy === ny);
+                                if (!hasBomb) {
+                                    possibleDirs.push(d);
+                                }
+                            }
+                        }
+                    });
+
+                    if (possibleDirs.length > 0) {
+                        let chosenDir = null;
+
+                        // 選択肢が2つ以上ある場合、直前の方向の「真逆（Uターン）」を避けて前進させることで、小刻みな往復を防ぐ
+                        if (possibleDirs.length > 1 && en.lastDir) {
+                            const opposites = { 'up': 'down', 'down': 'up', 'left': 'right', 'right': 'left' };
+                            const forwardDirs = possibleDirs.filter(d => d.name !== opposites[en.lastDir]);
+                            if (forwardDirs.length > 0) {
+                                chosenDir = forwardDirs[Math.floor(Math.random() * forwardDirs.length)];
+                            }
+                        }
+
+                        // 真逆を避ける方向がない、または選択肢が1つの場合はその方向へ
+                        if (!chosenDir) {
+                            chosenDir = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
+                        }
+
+                        en.tx = en.gx + chosenDir.x;
+                        en.ty = en.gy + chosenDir.y;
+                        en.lastDir = chosenDir.name;
+                    } else {
+                        // 四方すべて塞がれた場合はその場に待機（爆弾が消えるのを待つなど）
+                        en.tx = en.gx;
+                        en.ty = en.gy;
+                        en.lastDir = null;
+                    }
+                } else {
+                    // 目標セルに向けて軸ブレなく直線で滑らかに移動
+                    const angle = Math.atan2(targetY - en.y, targetX - en.x);
+                    en.x += Math.cos(angle) * en.speed;
+                    en.y += Math.sin(angle) * en.speed;
+                }
+
+                // プレイヤーとの衝突検知
+                const collisionThreshold = (player.radius + en.radius - Math.max(6, Math.floor(player.radius * 0.25)));
+                if (player.invincibility === 0 && Math.hypot(player.x - en.x, player.y - en.y) < collisionThreshold) {
+                    handleDeath();
+                }
+            });
+
+            // 爆発の判定
+            explosions.forEach((ex, i) => {
+                ex.life--;
+                const egx = Math.floor((player.x - OFFSET_X) / TILE_SIZE);
+                const egy = Math.floor((player.y - OFFSET_Y) / TILE_SIZE);
+                if (player.invincibility === 0 && egx === ex.gx && egy === ex.gy) handleDeath();
+                
+                enemies.forEach(en => {
+                    if (en.alive && Math.floor((en.x - OFFSET_X) / TILE_SIZE) === ex.gx && Math.floor((en.y - OFFSET_Y) / TILE_SIZE) === ex.gy) {
+                        en.alive = false; 
+                        player.score += 100; 
+                        updateHUD();
+                    }
+                });
+                if (ex.life <= 0) explosions.splice(i, 1);
+            });
+
+            draw();
+            requestAnimationFrame(update);
+        }
+
+        function explode(b) {
+            const dirs = [[0,0], [0,1], [0,-1], [1,0], [-1,0]];
+            dirs.forEach(d => {
+                for (let i = (d[0]===0 && d[1]===0 ? 0 : 1); i <= b.power; i++) {
+                    const tx = b.gx + d[0]*i, ty = b.gy + d[1]*i;
+                    if (tx < 0 || ty < 0 || tx >= COLS || ty >= ROWS || grid[ty][tx] === WALL) break;
+                    explosions.push({ gx: tx, gy: ty, life: 30 });
+
+                    // 誘爆処理
+                    const otherBombIdx = bombs.findIndex(ob => ob.gx === tx && ob.gy === ty);
+                    if (otherBombIdx !== -1) {
+                        const targetBomb = bombs.splice(otherBombIdx, 1)[0];
+                        player.bombsPlaced--;
+                        explode(targetBomb);
+                    }
+
+                    if (grid[ty][tx] === BLOCK) {
+                        grid[ty][tx] = EMPTY; 
+                        player.score += 20; 
+                        updateHUD();
+                        break;
+                    }
+                }
+            });
+        }
+
+        function drawExitDoor(ctx, x, y, size) {
+            const aliveEnemies = enemies.filter(en => en.alive).length;
+            const isOpen = aliveEnemies === 0;
+
+            ctx.save();
+            if (exitImgReady && exitImgProc) {
+                if (isOpen) {
+                    // 開放時：グロー効果と浮遊アニメーション
+                    const hover = Math.sin(Date.now() / 200) * 4;
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#f97316';
+                    ctx.drawImage(exitImgProc, x + 5, y + 5 + hover, size - 10, size - 10);
+                    
+                    // パーティクル的な光の枠
+                    ctx.strokeStyle = `rgba(249, 115, 22, ${0.4 + Math.sin(Date.now() / 100) * 0.2})`;
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(x + 8, y + 8 + hover, size - 16, size - 16);
+                } else {
+                    // 閉鎖時：暗転させて「まだ通れない」ことを強調
+                    ctx.filter = 'brightness(0.4) grayscale(0.8)';
+                    ctx.drawImage(exitImgProc, x + 10, y + 10, size - 20, size - 20);
+                }
+            } else {
+                // 画像未読み込み時のフォールバック
+                ctx.fillStyle = isOpen ? '#f97316' : '#334155';
+                ctx.fillRect(x + 15, y + 15, size - 30, size - 30);
+            }
+            ctx.restore();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // グリッド描画
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const x = OFFSET_X + c * TILE_SIZE, y = OFFSET_Y + r * TILE_SIZE;
+                    if (grid[r][c] === WALL) {
+                        ctx.fillStyle = COLORS.brick; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+                        ctx.fillStyle = COLORS.brickLight; ctx.fillRect(x+2, y+2, TILE_SIZE-4, TILE_SIZE/2-3);
+                    } else {
+                        ctx.fillStyle = COLORS.floor; ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+                        ctx.strokeStyle = COLORS.floorLine; ctx.strokeRect(x+1, y+1, TILE_SIZE-2, TILE_SIZE-2);
+                        
+                        if (grid[r][c] === EMPTY) {
+                            const item = itemGrid[r][c];
+                            if (item === EXIT_DOOR) {
+                                drawExitDoor(ctx, x, y, TILE_SIZE);
+                            } else if (item === ITEM_BOMB) {
+                                ctx.fillStyle = COLORS.playerOrange;
+                                ctx.beginPath(); ctx.arc(x+TILE_SIZE/2, y+TILE_SIZE/2, 14, 0, Math.PI*2); ctx.fill();
+                                ctx.fillStyle = '#ffffff';
+                                ctx.font = 'bold 16px sans-serif';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText('B', x+TILE_SIZE/2, y+TILE_SIZE/2);
+                            } else if (item === ITEM_FIRE) {
+                                ctx.fillStyle = '#22c55e';
+                                ctx.beginPath(); ctx.arc(x+TILE_SIZE/2, y+TILE_SIZE/2, 14, 0, Math.PI*2); ctx.fill();
+                                ctx.fillStyle = '#ffffff';
+                                ctx.font = 'bold 16px sans-serif';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText('F', x+TILE_SIZE/2, y+TILE_SIZE/2);
+                            }
+                        }
+
+                        if (grid[r][c] === BLOCK) {
+                            // ブロックのベース（茶色）
+                            ctx.fillStyle = COLORS.block;
+                            ctx.beginPath();
+                            ctx.roundRect(x + 4, y + 4, TILE_SIZE - 8, TILE_SIZE - 8, 4);
+                            ctx.fill();
+
+                            // レンガの目地（ライン）を描画
+                            ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+                            ctx.lineWidth = 2;
+                            
+                            // 横線（中央）
+                            ctx.beginPath();
+                            ctx.moveTo(x + 4, y + TILE_SIZE / 2); ctx.lineTo(x + TILE_SIZE - 4, y + TILE_SIZE / 2);
+                            ctx.stroke();
+
+                            // 縦線（互い違いに配置してレンガ感を出す）
+                            ctx.beginPath();
+                            ctx.moveTo(x + TILE_SIZE / 2, y + 4); ctx.lineTo(x + TILE_SIZE / 2, y + TILE_SIZE / 2);
+                            ctx.moveTo(x + TILE_SIZE / 4, y + TILE_SIZE / 2); ctx.lineTo(x + TILE_SIZE / 4, y + TILE_SIZE - 4);
+                            ctx.moveTo(x + 3 * TILE_SIZE / 4, y + TILE_SIZE / 2); ctx.lineTo(x + 3 * TILE_SIZE / 4, y + TILE_SIZE - 4);
+                            ctx.stroke();
+
+                            // 表面のハイライト（立体感）
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                            ctx.fillRect(x + 6, y + 6, TILE_SIZE - 12, 3);
+                        }
+                    }
+                }
+            }
+
+            // 爆弾
+            bombs.forEach(b => {
+                const s = 1 + Math.sin(Date.now()/120)*0.1;
+                ctx.save(); 
+                ctx.translate(OFFSET_X + b.gx*TILE_SIZE+TILE_SIZE/2, OFFSET_Y + b.gy*TILE_SIZE+TILE_SIZE/2); 
+                ctx.scale(s, s);
+                ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#f97316'; ctx.fillRect(-2, -32, 4, 10);
+                ctx.restore();
+            });
+
+            // 爆発
+            explosions.forEach(ex => {
+                ctx.fillStyle = `rgba(249, 115, 22, ${ex.life / 30})`;
+                ctx.fillRect(OFFSET_X + ex.gx*TILE_SIZE+3, OFFSET_Y + ex.gy*TILE_SIZE+3, TILE_SIZE-6, TILE_SIZE-6);
+            });
+
+            // エネミー（完璧な位置移動をビジュアルに反映）
+            enemies.forEach(en => {
+                if (!en.alive) return;
+                ctx.save(); ctx.translate(en.x, en.y);
+                
+                // 胴体
+                ctx.fillStyle = en.color; 
+                ctx.beginPath(); 
+                ctx.arc(0, 0, en.radius - 2, 0, Math.PI*2); 
+                ctx.fill();
+                
+                // 目の描画
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); 
+                ctx.arc(-TILE_SIZE/6, -TILE_SIZE/10, TILE_SIZE/8, 0, Math.PI*2); 
+                ctx.arc(TILE_SIZE/6, -TILE_SIZE/10, TILE_SIZE/8, 0, Math.PI*2); 
+                ctx.fill();
+                
+                ctx.fillStyle = 'black';
+                ctx.beginPath(); 
+                ctx.arc(-TILE_SIZE/6, -TILE_SIZE/10, TILE_SIZE/16, 0, Math.PI*2); 
+                ctx.arc(TILE_SIZE/6, -TILE_SIZE/10, TILE_SIZE/16, 0, Math.PI*2); 
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // プレイヤー画像描画（道幅いっぱい）
+            if (gameActive && (player.invincibility === 0 || Math.floor(Date.now()/100) % 2)) {
+                ctx.save();
+                ctx.translate(player.x, player.y);
+                const size = TILE_SIZE * 0.95;
+                ctx.globalAlpha = player.invincibility > 0 ? 0.4 : 1;
+
+                if (playerImgReady) {
+                    if (player.dir === 'left' && playerLeftImgReady && playerLeftImgProc) {
+                        ctx.drawImage(playerLeftImgProc, -size / 2, -size / 2, size, size);
+                    } else if (player.dir === 'right' && playerRightImgReady && playerRightImgProc) {
+                        ctx.drawImage(playerRightImgProc, -size / 2, -size / 2, size, size);
+                    } else if ((player.dir === 'down' || player.dir === 'front') && playerFrontImgReady && playerFrontImgProc) {
+                        ctx.drawImage(playerFrontImgProc, -size / 2, -size / 2, size, size);
+                    } else if ((player.dir === 'up' || player.dir === 'back') && playerBackImgReady && playerBackImgProc) {
+                        ctx.drawImage(playerBackImgProc, -size / 2, -size / 2, size, size);
+                    } else if (playerImgProc) {
+                        ctx.drawImage(playerImgProc, -size / 2, -size / 2, size, size);
+                    } else {
+                        ctx.drawImage(playerImg, -size / 2, -size / 2, size, size);
+                    }
+                } else {
+                    ctx.fillStyle = COLORS.playerOrange;
+                    ctx.beginPath();
+                    ctx.arc(0, 4, size * 0.25, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#334155';
+                    ctx.beginPath();
+                    ctx.arc(0, -1, size * 0.038, 0, Math.PI * 2);
+                    ctx.arc(0, 8, size * 0.038, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = COLORS.playerWhite;
+                    ctx.beginPath();
+                    ctx.arc(0, -18, size * 0.175, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#334155';
+                    ctx.beginPath();
+                    ctx.arc(-5, -19, size * 0.031, 0, Math.PI * 2);
+                    ctx.arc(5, -19, size * 0.031, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#334155';
+                    ctx.beginPath();
+                    ctx.roundRect(-8, -36, 16, 8, 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = COLORS.playerOrange;
+                    ctx.beginPath();
+                    ctx.arc(0, -38, size * 0.05, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.globalAlpha = 1;
+                ctx.restore();
+            }
+        }
+
+        function handleDeath() {
+            if (!gameActive || player.invincibility > 0) return;
+            const deathX = player.x;
+            const deathY = player.y;
+            player.lives--;
+            updateHUD();
+            if (player.lives <= 0) {
+                showGameOver();
+            } else {
+                player.invincibility = 90; 
+                player.x = deathX;
+                player.y = deathY;
+                bombs = [];
+                explosions = [];
+            }
+        }
+
+        window.onload = function() {
+            if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+                document.getElementById('mobileWarning').classList.remove('hidden');
+            }
+            initGame();
+            requestAnimationFrame(update);
+        }
+    </script>
 </body>
 </html>

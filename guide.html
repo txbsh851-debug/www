@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOMBERMAN: Game Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            background:
+                linear-gradient(rgba(15, 23, 42, 0.84), rgba(15, 23, 42, 0.92)),
+                url('./image/Start.png') center / cover no-repeat;
+            color: #e2e8f0;
+        }
+
+        .font-meiryo {
+            font-family: 'Meiryo', 'MS PGothic', 'Hiragino Kaku Gothic ProN', sans-serif;
+        }
+
+        .guide-card {
+            background: rgba(248, 250, 252, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+            backdrop-filter: blur(18px);
+        }
+
+        .section-card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.94));
+            border: 1px solid rgba(226, 232, 240, 0.95);
+        }
+
+        .action-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 3rem;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            background: #0f172a;
+            color: #fff;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center px-4 py-8">
+    <main class="guide-card w-full max-w-5xl rounded-[2rem] p-6 text-slate-800 md:p-10">
+        <div class="flex flex-col gap-6">
+            <header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                    <div class="mb-3 inline-flex rounded-full bg-orange-500 px-4 py-1.5 text-xs font-black uppercase tracking-[0.28em] text-white">
+                        Game Guide
+                    </div>
+                    <h1 class="font-meiryo text-3xl font-black tracking-tight text-slate-900 md:text-5xl">ボンバーマン ゲーム説明</h1>
+                    <p class="font-meiryo mt-3 text-sm font-bold text-slate-600 md:text-base">
+                        目的、操作、アイテム効果を 1 画面で確認できます。
+                    </p>
+                </div>
+                <a href="./index.html" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3 text-sm font-black tracking-wide text-white shadow-lg transition hover:-translate-y-0.5 hover:brightness-110">
+                    表紙へ戻る
+                </a>
+            </header>
+
+            <section class="grid gap-4 md:grid-cols-2">
+                <article class="section-card rounded-3xl p-6">
+                    <div class="mb-3 text-xs font-black uppercase tracking-[0.24em] text-orange-500">Mission</div>
+                    <h2 class="font-meiryo mb-3 text-2xl font-black text-slate-900">クリア条件</h2>
+                    <p class="font-meiryo text-sm leading-7 text-slate-700 md:text-base">
+                        すべての敵を倒したあと、ステージ内にあるドアへ到達するとクリアです。茶色のブロックを壊して進路と出口を見つけましょう。
+                    </p>
+                </article>
+
+                <article class="section-card rounded-3xl p-6">
+                    <div class="mb-3 text-xs font-black uppercase tracking-[0.24em] text-orange-500">Controls</div>
+                    <h2 class="font-meiryo mb-4 text-2xl font-black text-slate-900">基本操作</h2>
+                    <div class="flex flex-col gap-3 font-meiryo text-sm font-bold text-slate-700 md:text-base">
+                        <div class="flex items-center gap-3">
+                            <span class="action-chip">←↑↓→</span>
+                            <span>移動する</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="action-chip">Space</span>
+                            <span>爆弾を置く</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="action-chip">Pause</span>
+                            <span>ゲームを一時停止する</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="action-chip">Reset</span>
+                            <span>ステージを最初からやり直す</span>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="section-card rounded-3xl p-6">
+                    <div class="mb-3 text-xs font-black uppercase tracking-[0.24em] text-orange-500">Items</div>
+                    <h2 class="font-meiryo mb-4 text-2xl font-black text-slate-900">アイテム</h2>
+                    <div class="flex flex-col gap-4 font-meiryo text-sm leading-7 text-slate-700 md:text-base">
+                        <div>
+                            <span class="mr-2 inline-flex rounded-full bg-orange-500 px-3 py-1 text-xs font-black text-white">B</span>
+                            同時に置ける爆弾の数が増えます。
+                        </div>
+                        <div>
+                            <span class="mr-2 inline-flex rounded-full bg-emerald-500 px-3 py-1 text-xs font-black text-white">F</span>
+                            爆風の届く距離が伸びます。
+                        </div>
+                    </div>
+                </article>
+
+                <article class="section-card rounded-3xl p-6">
+                    <div class="mb-3 text-xs font-black uppercase tracking-[0.24em] text-orange-500">Rules</div>
+                    <h2 class="font-meiryo mb-4 text-2xl font-black text-slate-900">ライフと敗北条件</h2>
+                    <div class="font-meiryo flex flex-col gap-3 text-sm leading-7 text-slate-700 md:text-base">
+                        <p>敵に触れるか爆風に当たると LIFE が 1 減ります。</p>
+                        <p>残機がある間は、倒れた場所から短い無敵時間つきで再開します。</p>
+                        <p>LIFE が 0 になるとゲームオーバーです。</p>
+                    </div>
+                </article>
+            </section>
+
+            <section class="rounded-3xl bg-slate-900 px-6 py-5 text-white shadow-xl">
+                <div class="mb-2 text-xs font-black uppercase tracking-[0.24em] text-orange-300">Tip</div>
+                <p class="font-meiryo text-sm leading-7 text-slate-100 md:text-base">
+                    表紙では、「ゲームスタート」ボタンを押すとゲームが始まります。最初は通路を広げながら、逃げ道を確保して爆弾を置くのが安全です。
+                </p>
+            </section>
+        </div>
+    </main>
+
+    <!-- モバイル警告オーバーレイ -->
+    <div id="mobileWarning" class="hidden fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center p-8 text-center">
+        <div class="text-6xl mb-6">💻</div>
+        <h2 class="font-meiryo text-2xl font-black text-white mb-4">このゲームはPC専用です</h2>
+        <p class="font-meiryo text-slate-400 leading-relaxed">PCのブラウザからアクセスしてください。</p>
+    </div>
+
+    <script>
+        if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+            document.getElementById('mobileWarning').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
